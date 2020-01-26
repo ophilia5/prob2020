@@ -1,0 +1,83 @@
+Nas  Installation, setup and configuration.
+
+This enables multiple servers in IDC to share the same storage for backup at once, which minimizes overhead by centrally managing hard disks. NAS is scalable, high performance network setusolution. The main advantage is more hard disk storage space added to a network that already utilizes servers without shutting them down for maintenance and upgrades.
+
+Network attached storage.
+SAN ( Storage area network)
+NAS and SAN are called external centralized storage.
+Lun (logical unit number ) is an address attached to a specified NAS or SAN storage
+NAS or SAN admin create luns 
+And unix admin use luns they attached luns to the server to create virtual drives that can be sliced and used as desired.
+SAN /NAS are system with a lot of storage
+Ie numerous array of hard drives put together to form a hurge storage system.
+The difference between a NAS and a SAN is that NAS is a more smaller version of SAN 
+Some popular OS for SAN and NAS 
+EMC
+FREENAS 9it is an open source os build on unix kernel.
+We will install and configure FREENAS
+Create LUNS from the NASstorage
+Attach the lun to our solaris server to create virtual drives 
+We can use the drive to create 
+Setup and installation
+
+Create a vm 
+RAM = 1400
+One storage of 2g  for the NAS os 
+One storage of 10 gb  for LUNS
+Brigde it 
+Import the FREENAS software 
+Boot up to start the installation of NAS.
+Select install upgrade
+Then select the 2g 
+After the installation, remove the dvd and reboot 
+It will pick an ip upon reboot and if it doesn’t,
+
+Press 1 to configure one 
+Select em0 as NIC
+No for configure network
+No for DHCP
+Yes for configure ipv4 
+Put the ip address you choose
+No for ipv4
+To configute the lun,
+You need to go to the browser.
+http://yourip (ip for NAS)
+it will display the NAS UI 
+
+create a volume on the NAS 
+clic on storage on the left , clic on volume , ufs volume manager 
+in the volume name box assign a volume name highlight the 10g or the volume correspondant and click add volume now click on view volume to see your new volume.
+Create an iscsi LUN from the volume 
+Click on the service tab 
+Turn on scsi and click on the settings icon and click on portals (this will setup access to the LUN from external system)
+Click on add portal (portal1) 
+In comment , select the NAS ip address from the pull down menu
+Then click on initiator tab then add initiator leave it all and click ok
+We don’t touch authorized access then we click on target , add target 
+Target name = target1 
+Portal group id select and hit ok
+Then clic on extend and give it a name (entend1)
+Attach volume to extend by clicking browse to the extend box.
+Select the path to volume 
+Eg /mnt/vol1/nas1 and add size to the lun in the extend size box
+Associated target (link the target to the lun) click associated target ,add target/extend select from the pull down and click ok
+
+Server site (attach the lun to the server.)
+Ping the NAS
+Check the drives we have already
+then attach the luns to the server 
+#yum -y install iscsi-initiator-utils
+
+#iscsiadm -m discovery -t st -p 192.168.1.141
+
+m = mode
+ t= target 
+st= sendtarget
+ p= portal
+
+#iscsiadm -m node -T  iqn.2006-01.com.openfiler:tsn.d625a0d9cb77  -p 192.168.1.141 -l
+
+m= mode T= target p= portal l= logon
+you can now check and see the new drive 
+#ls /dev/sd*
+
