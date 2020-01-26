@@ -1,0 +1,57 @@
+
+
+                         Kernel upgrate /kernel compile.
+ 
+A patch is a small program use to ugrade, secure or fixe an OS or application  
+
+Kernel upgrade is another way of securing the server, fixing bugs, and making the system more stable.
+Steps  for kernel upgrade/compile
+
+1- Check the current kernel version
+
+#uname –a  or uname –r to check your current version
+
+2- Copy the new kernel package to your system
+Go to www.kernel.org to get the latest stable version (use wget to download it to your system)
+
+3- Extract the downloaded package.
+unarchive it
+#tar –xvf  <package>
+
+3- Install depedencies
+
+#cd <package>
+#yum groupinstall “Development Tools”
+#yum install openssl*
+#yum install libncurses5-dev -y
+#yum install ncurses-devel -y
+#yum install gcc*
+#yum install elfutils-libelf-devel -y
+#yum install centos-release-scl
+#yum-config-manager --enable rhel-server-rhscl-7-rpms
+#yum install devtoolset-7 -y
+#source scl_source enable devtoolset-7
+
+
+4- Choose all the options you need for your new kernel
+
+#makemenuconfig  or make defconfig and make the changes on the kernel module and save it. It will generate the .config file which contain all the changes to the kernel
+If you don’t have any changes to make, you can do #makedefconfig ( if you want the default features)
+
+5- Compile the new kernel
+#make 
+
+6- Compile the module
+
+#make modules 
+
+7- Install the module driver     
+#make modules_install  
+
+8- Create the kernel image in the grub.conf file, create the mapper to communicate with the hardware
+#make install(ignore the errors)
+
+9- set the new kernel as default at boot 
+kernel_upgrade.txt
+Ophilia Mulukoh 
+(mulukohophiliawa@gmail.com)Displaying kernel_upgrade.txt.
