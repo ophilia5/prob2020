@@ -1,0 +1,241 @@
+Samba Server Installation and Configuration in CentOS 6.3 / RHEL 6.3
+By SK -Updated on March 11, 201313209
+
+
+Samba is used to allow users to share and use files, folders and printers between Linux and Windows systems. In this how-to tutorial let us see how to install and configure samba server.
+
+
+Scenario
+In this tutorial, i use two systems as described below
+
+Samba server:
+Operating system : CentOS 6.3
+Hostname : sambaserver.unixmen.com
+IP Address : 192.168.1.50/24
+ Samba client:
+Operating system : Windows 7 Professional
+Hostname : client
+IP Address : 192.168.1.51/24
+Install Samba package
+Check and remove any previously installed samba package
+
+[root@sambaserver ~]# rpm -qa | grep samba
+[root@sambaserver ~]# yum list installed | grep samba
+If it installed, remove it using the below command
+
+
+[root@sambaserver ~]# yum remove samba*
+Now install samba
+
+[root@sambaserver ~]# yum install samba* -y
+Configure a fully accessed anonymous share
+Create a directory called ‘/samba/share1’ and set full permission
+
+[root@sambaserver ~]# mkdir -p /samba/share1
+[root@sambaserver ~]# chmod -R 0777 /samba/share1/
+Edit and add the following lines in samba config file as shown below
+
+[root@sambaserver ~]# vi /etc/samba/smb.conf
+## Line no 58 - Add the following lines below line 58 ##
+unix charset = UTF-8
+dos charset = CP932
+## Line no 75 - Change the to windows default workgroup ##
+workgroup = WORKGROUP
+## Line no 81 - Uncomment and set the IP Range ##
+hosts allow = 127. 192.168.1.
+## Line 102 - set no authentication ##
+security = share
+## Add the following lines at the bottom ##
+[myshare]
+path = /samba/share1
+writable = yes
+browsable = yes
+guest ok = yes
+guest only = yes
+create mode = 0777
+directory mode = 0777
+Start samba server
+
+[root@sambaserver ~]# vi /etc/samba/smb.conf
+[root@sambaserver ~]# /etc/init.d/smb start
+Starting SMB services: [ OK ]
+[root@sambaserver ~]# /etc/init.d/nmb start
+Starting NMB services: [ OK ]
+[root@sambaserver ~]# chkconfig smb on
+[root@sambaserver ~]# chkconfig nmb on
+Test the Samba server
+
+We can test the Samba server configuration using the command ‘testparm’.
+
+[root@sambaserver ~]# testparm
+Load smb config files from /etc/samba/smb.conf
+rlimit_max: increasing rlimit_max (1024) to minimum Windows limit (16384)
+Processing section "[homes]"
+Processing section "[printers]"
+Processing section "[myshare]"
+Loaded services file OK.
+Server role: ROLE_STANDALONE
+Press enter to see a dump of your service definitions
+
+[global]
+dos charset = CP932
+server string = Samba Server Version %v
+security = SHARE
+log file = /var/log/samba/log.%m
+max log size = 50
+hosts allow = 127., 192.168.1.
+cups options = raw
+
+[homes]
+comment = Home Directories
+read only = No
+browseable = No
+
+[printers]
+comment = All Printers
+path = /var/spool/samba
+printable = Yes
+browseable = No
+
+[myshare]
+path = /samba/share1
+read only = No
+create mask = 0777
+directory mask = 0777
+guest only = Yes
+guest ok = Yes
+Allow Samba server through firewall
+
+[root@sambaserver ~]# vi /etc/sysconfig/iptables
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -s 192.168.1.0/24 -m state --state NEW -p udp --dport 137 -j ACCEPT
+-A INPUT -s 192.168.1.0/24 -m state --state NEW -p udp --dport 138 -j ACCEPT
+-A INPUT -s 192.168.1.0/24 -m state --state NEW -p tcp --dport 139 -j ACCEPT
+-A INPUT -s 192.168.1.0/24 -m state --state NEW -p tcp --dport 445 -j ACCEPT
+-A INPUT -s 192.168.1.0/24 -m state --state NEW -p tcp --dport 901 -j ACCEPT
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+Restart iptables to save the changes
+
+[root@sambaserver ~]# service iptables restart
+iptables: Flushing firewall rules: [ OK ]
+iptables: Setting chains to policy ACCEPT: filter [ OK ]
+iptables: Unloading modules: [ OK ]
+iptables: Applying firewall rules: [ OK ]
+Disable SELINUX
+
+[root@sambaserver ~]# vi /etc/sysconfig/selinux
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+# enforcing - SELinux security policy is enforced.
+# permissive - SELinux prints warnings instead of enforcing.
+# disabled - No SELinux policy is loaded.
+SELINUX=disabled
+# SELINUXTYPE= can take one of these two values:
+# targeted - Targeted processes are protected,
+# mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+Restart the server and goto windows client system
+
+Click Start -> Run. Enter the samba Server IP as shown below.
+
+Win7 [Running] - Oracle VM VirtualBox_001
+
+Win7 [Running] - Oracle VM VirtualBox_002
+
+Now create some folders and files
+
+Win7 [Running] - Oracle VM VirtualBox_004
+
+Check whether the newly created files or folders present in the samba server
+
+[root@sambaserver ~]# ls -l /samba/share1/
+total 4
+drwxrwxrwx 2 nobody nobody 4096 Mar 8 22:59 unixmen
+Configure a authenticated share using samba server
+Create a user called “sk” and a group called “smbgroup”. Add the user “sk” to the group “smbgroup”
+
+[root@sambaserver ~]# useradd sk
+[root@sambaserver ~]# groupadd smbgroup
+[root@sambaserver ~]# usermod -a -G smbgroup sk
+[root@sambaserver ~]# smbpasswd -a sk
+New SMB password:
+Retype new SMB password:
+Added user sk.
+Create a new share called “/samba/share2” and set the permissions to that share.
+
+[root@sambaserver ~]# mkdir /samba/share2
+[root@sambaserver ~]# chmod -R 0755 /samba/share2/
+[root@sambaserver ~]# chown -R sk:smbgroup /samba/share2/
+Add the below lines at the bottom of samba config file.
+
+[root@sambaserver ~]# vi /etc/samba/smb.conf
+[secure]
+path = /samba/share2
+writable = yes
+browsable = yes
+guest ok = no
+valid users = @smbgroup
+Test the configuration for any errors
+
+[root@sambaserver ~]# testparm
+Load smb config files from /etc/samba/smb.conf
+rlimit_max: increasing rlimit_max (1024) to minimum Windows limit (16384)
+Processing section "[homes]"
+Processing section "[printers]"
+Processing section "[myshare]"
+Processing section "[secure]"
+Loaded services file OK.
+Server role: ROLE_STANDALONE
+Press enter to see a dump of your service definitions
+
+[global]
+dos charset = CP932
+server string = Samba Server Version %v
+security = SHARE
+log file = /var/log/samba/log.%m
+max log size = 50
+hosts allow = 127., 192.168.1.
+cups options = raw
+
+[homes]
+comment = Home Directories
+read only = No
+browseable = No
+
+[printers]
+comment = All Printers
+path = /var/spool/samba
+printable = Yes
+browseable = No
+
+[myshare]
+path = /samba/share1
+read only = No
+create mask = 0777
+directory mask = 0777
+guest only = Yes
+guest ok = Yes
+
+[secure]
+path = /samba/share2
+valid users = @smbgroup
+read only = No
+Restart samba server
+
+[root@sambaserver ~]# /etc/init.d/smb restart
+Shutting down SMB services: [ OK ]
+Starting SMB services: [ OK ]
+[root@sambaserver ~]# /etc/init.d/nmb restart
+Shutting down NMB services: [ OK ]
+Starting NMB services: [ OK ]
