@@ -1,0 +1,30 @@
+---
+ - hosts: webserver
+   user: root
+   tasks:
+
+     - name: creating user h354709
+       user:
+          name: h354709
+          comment: ophilia m
+
+     - name: creating a group Linux
+       group:
+          name: linux
+          state: present
+
+
+     - name: install apache
+       yum:
+          name: httpd
+          state: present
+     - name: start httpd daemon
+       service:
+          name: httpd
+          state: started
+
+     - name: copy the index file to the target hosts
+       copy:
+          src: /tmp/index.html
+          dest: /var/www/html
+          remote_src: no
