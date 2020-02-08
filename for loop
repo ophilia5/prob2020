@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for users in 2a 3a 4a 5a 6a 7a 8a 9a 10a
+do
+
+useradd $users
+
+done
